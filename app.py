@@ -35,5 +35,8 @@ def login():
 def register():
     pass
 
+@app.route("/user/<id>")
+def user_page(id):
+    pass
 if __name__ == "__main__":
     app.run(debug=True,host='0.0.0.0', port=5000)
