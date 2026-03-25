@@ -26,10 +26,10 @@ def get_db_connection():
 
 @app.route("/")
 def newpage():
-    pass
+    return redirect(url_for('login'))
 @app.route("/login")
 def login():
-    pass
+    return "hi"
 
 @app.route("/new_user")
 def register():
@@ -38,5 +38,10 @@ def register():
 @app.route("/user/<id>")
 def user_page(id):
     pass
+@app.errorhandler(404)
+def e404(e):
+    path = request.path
+    return render_template('404.html',path = path)
+
 if __name__ == "__main__":
     app.run(debug=True,host='0.0.0.0', port=5000)
