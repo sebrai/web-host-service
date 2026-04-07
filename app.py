@@ -27,17 +27,65 @@ def get_db_connection():
 @app.route("/")
 def newpage():
     return redirect(url_for('login'))
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return "hi"
+    if request.method == "POST":
+        brukernavn = request.form['brukernavn']
+        passord = request.form['passord']
 
-@app.route("/new_user")
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE name=%s", (brukernavn,))
+        bruker = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if bruker and check_password_hash(bruker['password'], passord):
+            session['brukernavn'] = bruker['name']
+            session['role'] = bruker['role']
+
+            return redirect(url_for("home"))
+        else:
+            return render_template("login.html", feil_melding="Ugyldig brukernavn eller passord")
+
+    return render_template("login.html")
+
+
+@app.route("/new_user", methods=["GET", "POST"])
 def register():
-    pass
+    if request.method == "POST":
+        brukernavn = request.form['brukernavn']
+        epost = request.form['epost']
+        passord = generate_password_hash(request.form['passord'])
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)", 
+                       (brukernavn, epost, passord))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash("user registrert!", "success")
+        return redirect(url_for("login"))
+
+    return render_template("registrer.html")
 
 @app.route("/user/<id>")
 def user_page(id):
-    pass
+    return id+ " the user"
+
+@app.route("/homepage")
+def home():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("DESCRIBE ext_files")
+    result = cursor.fetchall()
+    return result
+
+@app.route("/visit/<web_id>")
+def visit(web_id):
+    return web_id +" the site"
+
 @app.errorhandler(404)
 def e404(e):
     path = request.path
