@@ -97,6 +97,8 @@
         <div>
             {% if session.get('role') == 'admin' %}
             hello admin user: {{session.get('username')}}
+            {% else %}
+            hello user
             {% endif %}
         </div>
         <div>

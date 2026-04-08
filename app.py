@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
-import requests as websearch
+import climage
 from dotenv import load_dotenv
 # Bruker du Mariadb så bytter du ut mysql med mariadb. Mariadb må installeres med (pip install mariadb) Koden finner du på neste linje.
 # import mariadb
@@ -24,9 +24,9 @@ def get_db_connection():
         password=pword,
         database="web_hoster"
     )
-
+#----------------------------------------------------- login
 @app.route("/")
-def newpage():
+def blank():
     return redirect(url_for('login'))
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -78,15 +78,20 @@ def logout():
     flash("you have logged out", "info")
     return redirect(url_for("login"))
 
-
+# ------------------------------------------------------------------ user info/ hamepage
 @app.route("/user/<id>")
 def user_page(id):
     return id+ " the user"
 
 @app.route("/homepage")
 def home():
-   
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.close()
+    conn.close()
     return render_template("homepage.html")
+
+# -------------------------------------------------------------------- websites
 
 @app.route("/visit/<web_id>")
 def visit(web_id):
