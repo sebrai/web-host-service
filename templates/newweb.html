@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>new website </title>
+</head>
+<body>
+ <form action=" {{url_for('newwebsite')}}" method="post">
+    <label for="title">site title:</label><br>
+    <input type="text" id="title" name="title" required><br><br>
+
+    <label for="html">html file:</label><br>
+    <input type="text" id="html" name="title" required><br><br>
+
+    <label for="css">css file:(optional)</label><br>
+    <input type="text" id="css" name="title" ><br><br>
+
+    <label for="js">js file: (optional)</label><br>
+    <input type="text" id="js" name="title" ><br><br>
+ </form>   
+</body>
+</html>

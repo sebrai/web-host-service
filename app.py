@@ -97,6 +97,12 @@ def home():
 def visit(web_id):
     return web_id +" the site"
 
+@app.route('/new_webpage', methods =['POST','GET'])
+def newwebsite():
+  if request.method == 'POST':
+    pass
+  return "newpage"
+
 @app.errorhandler(404)
 def e404(e):
     path = request.path
