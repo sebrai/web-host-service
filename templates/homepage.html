@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>homepage: {{session.get('username')}} </title>
+    <link rel="shortcut icon" href=" {{url_for('static',filename= 'img/favicon.svg')}}" type="image/x-icon">
+</head>
+<style>
+    .pfp {
+        border-radius: 100%;
+        aspect-ratio: 1/1;
+        height: 80%;
+        cursor: pointer;
+    }
+
+    header {
+        background-color: #1a146f;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 10%;
+        display: flex;
+        flex-flow: row-reverse nowrap;
+        justify-content: center;
+        gap: 85%;
+        align-items: center;
+    }
+
+    .nameplate {
+        color: rgb(250, 250, 250);
+    }
+    footer{
+         background-color: #1a146f;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 10%;
+        display: flex;
+        flex-flow: row-reverse nowrap;
+        justify-content: end;
+        gap: 20px;
+        align-items: center;
+    }
+</style>
+
+<body>
+    <header>
+        <a href="{{url_for('user_page', id = session.get('user_id'))}}">
+            <img class="pfp"
+                src="https://ui-avatars.com/api/?background=fc5953&color=fff&name={{session.get('username')}}"
+                alt="{{session.get('username')}}">
+        </a>
+
+        <h1 class="nameplate">{{session.get('username')}} </h1>
+    </header>
+    <main>
+
+    </main>
+    <footer>
+        <div></div>
+        <a href=" {{url_for('logout')}}"> <button>logout</button></a>
+        
+    </footer>
+</body>
+
+</html>

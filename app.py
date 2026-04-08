@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
+import requests as websearch
 from dotenv import load_dotenv
 # Bruker du Mariadb så bytter du ut mysql med mariadb. Mariadb må installeres med (pip install mariadb) Koden finner du på neste linje.
 # import mariadb
@@ -35,13 +36,14 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE name=%s", (brukernavn,))
+        cursor.execute("SELECT id,name,email,password,role FROM users WHERE name=%s", (brukernavn,))
         bruker = cursor.fetchone()
         cursor.close()
         conn.close()
 
         if bruker and check_password_hash(bruker['password'], passord):
-            session['brukernavn'] = bruker['name']
+            session['username'] = bruker['name']
+            session['user_id'] = bruker['id']
             session['role'] = bruker['role']
 
             return redirect(url_for("home"))
@@ -70,17 +72,21 @@ def register():
 
     return render_template("registrer.html")
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("you have logged out", "info")
+    return redirect(url_for("login"))
+
+
 @app.route("/user/<id>")
 def user_page(id):
     return id+ " the user"
 
 @app.route("/homepage")
 def home():
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("DESCRIBE ext_files")
-    result = cursor.fetchall()
-    return result
+   
+    return render_template("homepage.html")
 
 @app.route("/visit/<web_id>")
 def visit(web_id):
