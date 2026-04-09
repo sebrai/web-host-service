@@ -30,6 +30,8 @@ def blank():
     return redirect(url_for('login'))
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if  session.get('user_id'):
+      return redirect(url_for('home'))
     if request.method == "POST":
         brukernavn = request.form['brukernavn']
         passord = request.form['passord']
@@ -99,9 +101,36 @@ def visit(web_id):
 
 @app.route('/new_webpage', methods =['POST','GET'])
 def newwebsite():
+  if not session.get('user_id'):
+      return redirect(url_for('login'))
   if request.method == 'POST':
+    title = request.form['title']
+    html = request.files['html']
+    html_content = html.read().decode('utf-8')
+    css = request.files.get('css')
+    if css:
+        css_content = css.read().decode('utf-8')
+    js_file = request.files.get('js')
+    if js_file:
+        js_content = js_file.read().decode('utf-8')
+    private = bool(request.form['private'])
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO websites(title,private, u_id,html,has_css,has_js) VALUES (%s,%s,%s,%s,%s,%s)",(title,private,session['user_id'],html_content,bool(css),bool(js_file)))
+    conn.commit()
+    cursor.execute("SELECT id FROM webswites WHERE title = %s ORDER BY id DESC LIMIT 1",(title,))
+    w_id = cursor.fetchone()
+    if css: 
+        cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (1,w_id,css_content))
+        conn.commit
+    if js_file: 
+        cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (2,w_id,js_content))
+        conn.commit
+    
+    cursor.close()
+    conn.close()
     pass
-  return "newpage"
+  return render_template("newweb.html")
 
 @app.errorhandler(404)
 def e404(e):
