@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
+import re
 import climage
 from dotenv import load_dotenv
 # Bruker du Mariadb så bytter du ut mysql med mariadb. Mariadb må installeres med (pip install mariadb) Koden finner du på neste linje.
@@ -97,7 +98,15 @@ def home():
 
 @app.route("/visit/<web_id>")
 def visit(web_id):
-    return web_id +" the site"
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM web_user WHERE id = %s",(web_id,))
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
+    final = re.sub("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html']) + js
+    return  final
 
 @app.route('/new_webpage', methods =['POST','GET'])
 def newwebsite():
@@ -113,17 +122,19 @@ def newwebsite():
     js_file = request.files.get('js')
     if js_file:
         js_content = js_file.read().decode('utf-8')
-    private = bool(request.form['private'])
+    private = bool(request.form.get('private'))
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO websites(title,private, u_id,html,has_css,has_js) VALUES (%s,%s,%s,%s,%s,%s)",(title,private,session['user_id'],html_content,bool(css),bool(js_file)))
     conn.commit()
-    cursor.execute("SELECT id FROM webswites WHERE title = %s ORDER BY id DESC LIMIT 1",(title,))
+    cursor.execute("SELECT id FROM websites WHERE title = %s ORDER BY id DESC LIMIT 1",(title,))
     w_id = cursor.fetchone()
     if css: 
+        print("has css")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (1,w_id,css_content))
         conn.commit
     if js_file: 
+        print("has js")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (2,w_id,js_content))
         conn.commit
     
