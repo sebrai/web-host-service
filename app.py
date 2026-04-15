@@ -110,8 +110,13 @@ def visit(web_id):
     cursor.close()
     conn.close()
     js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
-    final = re.sub("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html']) + js
-    return  final
+    css = ("<style>"+result['css']+"</style>") if result.get("css") else ""
+    html_content,count = re.subn("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html'], flags=re.IGNORECASE) 
+    if count == 0:
+        new_html = re.sub(r"(<head[^>]*>)", rf"\1\n<title>{result['title']}</title>", new_html, flags=re.IGNORECASE)
+    html_content = re.sub(r'<script.*?>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+    html_content = re.sub(r'<link[^>]*rel=["\']stylesheet["\'][^>]*>', '', html_content, flags=re.IGNORECASE)
+    return css+ html_content + js
 
 @app.route('/new_webpage', methods =['POST','GET'])
 def newwebsite():
@@ -133,19 +138,19 @@ def newwebsite():
     cursor.execute("INSERT INTO websites(title,private, u_id,html,has_css,has_js) VALUES (%s,%s,%s,%s,%s,%s)",(title,private,session['user_id'],html_content,bool(css),bool(js_file)))
     conn.commit()
     cursor.execute("SELECT id FROM websites WHERE title = %s ORDER BY id DESC LIMIT 1",(title,))
-    w_id = cursor.fetchone()
+    w_id = cursor.fetchone()[0]
     if css: 
         print("has css")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (1,w_id,css_content))
-        conn.commit
+        conn.commit()
     if js_file: 
         print("has js")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (2,w_id,js_content))
-        conn.commit
+        conn.commit()
     
     cursor.close()
     conn.close()
-    pass
+    return redirect(url_for('home'))
   return render_template("newweb.html")
 
 @app.route("/change_status/<id>/<old>")
