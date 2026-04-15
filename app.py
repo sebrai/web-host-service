@@ -25,6 +25,21 @@ def get_db_connection():
         password=pword,
         database="web_hoster"
     )
+def check_acces(web_id):
+    if not session.get('user_id'):
+      return (False,"not loged inn")
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT u_id FROM websites where id = %s",(web_id,))
+    creator_id = cursor.fetchone()['u_id']
+    if creator_id == session['user_id']:
+        return (True,"accesed by creator")
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM private_acces WHERE web_id =%s AND u_id =%s )",(web_id,session['user_id']))
+    has_acces = cursor.fetchone()
+    return (bool(has_acces),"acces:"+bool(has_acces))
+    cursor.close()
+    conn.close()
+    
 #----------------------------------------------------- login
 @app.route("/")
 def blank():
@@ -48,6 +63,7 @@ def login():
             session['username'] = bruker['name']
             session['user_id'] = bruker['id']
             session['role'] = bruker['role']
+            session['email'] = bruker['email']
 
             return redirect(url_for("home"))
         else:
@@ -109,6 +125,10 @@ def visit(web_id):
     result = cursor.fetchone()
     cursor.close()
     conn.close()
+    # if result['private']:
+    #     acces = check_acces(web_id=web_id)
+    #     print(acces)
+    #     return redirect(url_for('home')) # changed with acces check
     js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
     css = ("<style>"+result['css']+"</style>") if result.get("css") else ""
     html_content,count = re.subn("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html'], flags=re.IGNORECASE) 
