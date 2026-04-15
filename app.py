@@ -88,11 +88,16 @@ def user_page(id):
 
 @app.route("/homepage")
 def home():
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, title, private FROM  websites WHERE u_id = %s",(session.get("user_id"),))
+    websites = cursor.fetchall()
+    print(websites,session.get('user_id'))
     cursor.close()
     conn.close()
-    return render_template("homepage.html")
+    return render_template("homepage.html",webpages = websites)
 
 # -------------------------------------------------------------------- websites
 
@@ -143,10 +148,26 @@ def newwebsite():
     pass
   return render_template("newweb.html")
 
+@app.route("/change_status/<id>/<old>")
+def changestatus(id,old):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    new_status = 1 if int(old) == 0 else 0
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT u_id FROM websites WHERE id = %s",(id,))
+    correct_id = cursor.fetchone()
+    if correct_id and (correct_id['u_id'] == session['user_id'] or session['role'] == 'admin'):
+        cursor.execute("UPDATE websites SET private = %s WHERE id = %s",(new_status,id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('home'))
+
 @app.errorhandler(404)
 def e404(e):
     path = request.path
-    return render_template('404.html',path = path)
+    return render_template('404.html',path = path), 404
 
 if __name__ == "__main__":
     app.run(debug=True,host='0.0.0.0', port=5000)

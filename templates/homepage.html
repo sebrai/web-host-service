@@ -76,10 +76,21 @@
         height: 30%;
     }
 
-    main div:nth-child(2) {
+    main div:nth-child(2):not(.webs) {
         display: flex;
         background-color: var(--white);
         height: 60%;
+    }
+    .webs{
+        background-color: var(--blue);
+        border-radius: 15px;
+        width: 35%;
+        height: 40%;
+        padding-left: 10px;
+
+    }
+    .webs a {
+        color: var(--white);
     }
 </style>
 
@@ -102,9 +113,22 @@
             {% endif %}
         </div>
         <div>
-             <a href="{{url_for('newwebsite')}}">
+            {% for page in webpages %}
+            <div class="webs">
+                <h1>{{ page['title']}}</h1>
+                <a href="{{url_for('visit',web_id = page['id'])}}">visit: {{page['title']}}</a> <br>
+                <a href="{{url_for('changestatus',id = page['id'],old =page['private'] )}}"><button>
+                    {% if page['private'] %}
+                    make public
+                    {% else %}
+                    make private
+                    {% endif %}
+                </button></a>
+            </div>
+            {% endfor %}
+            <a href="{{url_for('newwebsite')}}">
                 <button>new website</button>
-             </a>
+            </a>
         </div>
     </main>
     <footer>
