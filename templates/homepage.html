@@ -99,7 +99,7 @@
     <header>
         <a href="{{url_for('user_page', id = session.get('user_id'))}}">
             <img class="pfp"
-                src="https://ui-avatars.com/api/?background=fc5953&color=fff&name={{session.get('username')}}"
+                src="https://ui-avatars.com/api/?&color=000&name={{session.get('username')}}"
                 alt="{{session.get('username')}}">
         </a>
 
@@ -129,6 +129,9 @@
                 <a href=""><button>give acces</button></a>
                 <a href=""><button>remove acces</button></a>
                 {% endif %}
+                <a href="{{url_for('editweb',id = page['id'])}}">
+                    <button>edit</button>
+                </a>
             </div>
             {% endfor %}
             <a href="{{url_for('newwebsite')}}">

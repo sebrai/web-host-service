@@ -25,9 +25,9 @@ def get_db_connection():
         password=pword,
         database="web_hoster"
     )
-def check_acces(web_id):
+def check_acces(web_id,):
     if not session.get('user_id'):
-      return (False,"not loged inn")
+      return (False,"not loged inn",("none",))
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT u_id FROM websites where id = %s",(web_id,))
@@ -35,13 +35,13 @@ def check_acces(web_id):
     if creator_id == session['user_id']:
         cursor.close()
         conn.close()
-        return (True,"accesed by creator")
-    cursor.execute("SELECT EXISTS(SELECT 1 FROM private_acces WHERE web_id =%s AND u_id =%s ) AS 'bool'",(web_id,session['user_id']))
-    has_acces = cursor.fetchone()["bool"]
+        return (True,"accesed by creator",("view","edit","remove"))
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM private_acces WHERE web_id =%s AND u_id =%s ) AS 'acces'",(web_id,session['user_id']))
+    has_acces = cursor.fetchone()["acces"]
     cursor.close()
     conn.close()
     # print(has_acces)
-    return (bool(has_acces),"acces: "+str(has_acces))
+    return (bool(has_acces),"[0]for status",("view",))
     
     
 #----------------------------------------------------- login
@@ -117,7 +117,7 @@ def home():
     # print(websites,session.get('user_id'))
     cursor.close()
     conn.close()
-    return render_template("homepage.html",webpages = websites),403
+    return render_template("homepage.html",webpages = websites)
 
 # -------------------------------------------------------------------- websites
 
@@ -136,8 +136,8 @@ def visit(web_id):
     if result['private']:
         acces = check_acces(web_id=web_id)
         print(acces)
-        if  not acces[0]:
-            return redirect(url_for('home')) 
+        if  not acces[0] or not "view" in acces[2]:
+            abort(403)
     js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
     css = ("<style>"+result['css']+"</style>") if result.get("css") else ""
     html_content,count = re.subn("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html'], flags=re.IGNORECASE) 
@@ -169,11 +169,9 @@ def newwebsite():
     cursor.execute("SELECT id FROM websites WHERE title = %s ORDER BY id DESC LIMIT 1",(title,))
     w_id = cursor.fetchone()[0]
     if css: 
-        print("has css")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (1,w_id,css_content))
         conn.commit()
     if js_file: 
-        print("has js")
         cursor.execute("INSERT INTO ext_files(type,w_id,content) VALUES (%s,%s,%s)", (2,w_id,js_content))
         conn.commit()
     
@@ -197,11 +195,43 @@ def changestatus(id,old):
     cursor.close()
     conn.close()
     return redirect(url_for('home'))
+@app.route("/edit_website/<id>", methods =['POST','GET'])
+def editweb(id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    acces = check_acces(id)
+    if not acces[0] or not "edit" in acces[2]:
+        abort(403)
+    if request.method == 'POST':
+        title = request.form['title']
+        html = request.files['html']
+        html_content = html.read().decode('utf-8')
+        css = request.files.get('css')
+        if css:
+            css_content = css.read().decode('utf-8')
+        js_file = request.files.get('js')
+        if js_file:
+            js_content = js_file.read().decode('utf-8')
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE websites SET title = %s, html = %s, has_css =%s, has_js = %s WHERE id =%s",(title,html_content,bool(css),bool(js_file),id))
+        conn.commit()
+        # cursor.execute("UPDATE ext_files SET content = %s WHERE type = 1 AND id = %s", (css_content or "",id))
+        # cursor.execute("UPDATE ext_files SET content = %s WHERE type = 2 AND id = %s", (js_content or "",id))
+        conn.commit()
+    
+        cursor.close()
+        conn.close()
+        return redirect(url_for("visit",web_id = id))
+    return render_template("editweb.html",id =id)  
 
 @app.errorhandler(404)
 def e404(e):
     path = request.path
     return render_template('404.html',path = path), 404
 
+@app.errorhandler(403)
+def e403(e):
+    return redirect(url_for("home"))
 if __name__ == "__main__":
     app.run(debug=True,host='0.0.0.0', port=5000)

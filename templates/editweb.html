@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>edit website</title>
+</head>
+<body>
+ <form action=" {{url_for('editweb',id = id)}}" method="post" enctype="multipart/form-data">
+    <h1>for technical reasons any image should be linked through http or https</h1>
+    <label for="title">site title:</label><br>
+    <input type="text" id="title" name="title" required><br><br>
+
+    <label for="html">html file:</label><br>
+    <input type="file" id="html" name="html" required accept=".html"><br><br>
+
+    <label for="css">css file: (optional)</label><br>
+    <input type="file" id="css" name="css" accept=".css"><br><br>
+
+    <label for="js">js file: (optional)</label><br>
+    <input type="file" id="js" name="js" accept=".js"><br><br>
+
+    <input type="submit" value="submit">
+ </form>   
+</body>
+</html>
