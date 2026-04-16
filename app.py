@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
@@ -33,12 +33,16 @@ def check_acces(web_id):
     cursor.execute("SELECT u_id FROM websites where id = %s",(web_id,))
     creator_id = cursor.fetchone()['u_id']
     if creator_id == session['user_id']:
+        cursor.close()
+        conn.close()
         return (True,"accesed by creator")
-    cursor.execute("SELECT EXISTS(SELECT 1 FROM private_acces WHERE web_id =%s AND u_id =%s )",(web_id,session['user_id']))
-    has_acces = cursor.fetchone()
-    return (bool(has_acces),"acces:"+bool(has_acces))
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM private_acces WHERE web_id =%s AND u_id =%s ) AS 'bool'",(web_id,session['user_id']))
+    has_acces = cursor.fetchone()["bool"]
     cursor.close()
     conn.close()
+    # print(has_acces)
+    return (bool(has_acces),"acces: "+str(has_acces))
+    
     
 #----------------------------------------------------- login
 @app.route("/")
@@ -110,10 +114,10 @@ def home():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT id, title, private FROM  websites WHERE u_id = %s",(session.get("user_id"),))
     websites = cursor.fetchall()
-    print(websites,session.get('user_id'))
+    # print(websites,session.get('user_id'))
     cursor.close()
     conn.close()
-    return render_template("homepage.html",webpages = websites)
+    return render_template("homepage.html",webpages = websites),403
 
 # -------------------------------------------------------------------- websites
 
@@ -123,12 +127,17 @@ def visit(web_id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM web_user WHERE id = %s",(web_id,))
     result = cursor.fetchone()
+    if not result: 
+        cursor.close()
+        conn.close()
+        abort(404)
     cursor.close()
     conn.close()
-    # if result['private']:
-    #     acces = check_acces(web_id=web_id)
-    #     print(acces)
-    #     return redirect(url_for('home')) # changed with acces check
+    if result['private']:
+        acces = check_acces(web_id=web_id)
+        print(acces)
+        if  not acces[0]:
+            return redirect(url_for('home')) 
     js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
     css = ("<style>"+result['css']+"</style>") if result.get("css") else ""
     html_content,count = re.subn("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html'], flags=re.IGNORECASE) 
