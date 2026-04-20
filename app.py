@@ -43,7 +43,7 @@ def check_acces(web_id,):
     # print(has_acces)
     return (bool(has_acces),"[0]for status",("view",))
     
-    
+ 
 #----------------------------------------------------- login
 @app.route("/")
 def blank():
@@ -207,22 +207,34 @@ def editweb(id):
         html = request.files['html']
         html_content = html.read().decode('utf-8')
         css = request.files.get('css')
+        css_content = ""
         if css:
             css_content = css.read().decode('utf-8')
         js_file = request.files.get('js')
+        js_content = ""
         if js_file:
             js_content = js_file.read().decode('utf-8')
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE websites SET title = %s, html = %s, has_css =%s, has_js = %s WHERE id =%s",(title,html_content,bool(css),bool(js_file),id))
         conn.commit()
-        # cursor.execute("UPDATE ext_files SET content = %s WHERE type = 1 AND id = %s", (css_content or "",id))
-        # cursor.execute("UPDATE ext_files SET content = %s WHERE type = 2 AND id = %s", (js_content or "",id))
+        cursor.execute("SELECT 1 FROM ext_files WHERE w_id = %s AND type = 1", (id,))
+        if cursor.fetchone(): # update row if it exists else instert new row
+            cursor.execute("UPDATE ext_files SET content = %s WHERE w_id = %s AND type = 1", (css_content, id))
+        else:
+            cursor.execute("INSERT INTO ext_files (w_id, type, content) VALUES (%s, 1, %s)", (id, css_content))
+       
+       
+        cursor.execute("SELECT 1 FROM ext_files WHERE w_id = %s AND type = 2", (id,))
+        if cursor.fetchone():
+            cursor.execute("UPDATE ext_files SET content = %s WHERE w_id = %s AND type = 2", (js_content, id))
+        else:
+            cursor.execute("INSERT INTO ext_files (w_id, type, content) VALUES (%s, 2, %s)", (id, js_content))
         conn.commit()
     
         cursor.close()
         conn.close()
-        return redirect(url_for("visit",web_id = id))
+        return redirect(url_for("home"))
     return render_template("editweb.html",id =id)  
 
 @app.errorhandler(404)
