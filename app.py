@@ -243,6 +243,35 @@ def editweb(id):
         return redirect(url_for("home"))
     return render_template("editweb.html",id =id)  
 
+
+@app.route("/view/<title>")
+def getwebsite(title):
+    pass
+@app.route("/forum/<id>")
+def forum(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT c.content, c.timestamp, u.name FROM comments c WHERE w_id = %s JOIN users u ON c.u_id = u.id",(id,))
+    result = cursor.fetchall()
+    cursor.execute("SELECT id, title FROM websites WHERE id = %s",(id,))
+    site = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return render_template('forum.html',comments = result, site = site)
+@app.route("comment/<id>", method= ['POST','GET'])
+def comment(id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    if request.method == 'POST':
+        content = request.form['content']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO coments(comment, u_id, web_id) VALUES(%s,%s,%s)",(content,session['user_id'],id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    redirect(url_for('forum',id = id))
 @app.errorhandler(404)
 def e404(e):
     path = request.path
