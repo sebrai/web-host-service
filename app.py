@@ -3,7 +3,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
 import re
-import climage
 from dotenv import load_dotenv
 # Bruker du Mariadb så bytter du ut mysql med mariadb. Mariadb må installeres med (pip install mariadb) Koden finner du på neste linje.
 # import mariadb
@@ -28,10 +27,17 @@ def get_db_connection():
 def check_acces(web_id,):
     if not session.get('user_id'):
       return (False,"not loged inn",("none",))
+    if session['role'] == "admin":
+        return (True,"admin user",("view", "edit", "remove"))
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT u_id FROM websites where id = %s",(web_id,))
-    creator_id = cursor.fetchone()['u_id']
+    creator_id = cursor.fetchone()
+    if not creator_id:
+        cursor.close()
+        conn.close()
+        abort(404)
+    creator_id = creator_id['u_id']
     if creator_id == session['user_id']:
         cursor.close()
         conn.close()
@@ -41,7 +47,7 @@ def check_acces(web_id,):
     cursor.close()
     conn.close()
     # print(has_acces)
-    return (bool(has_acces),"[0]for status",("view",))
+    return (bool(has_acces),"no exeptions hit",("view",))
     
  
 #----------------------------------------------------- login
