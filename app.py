@@ -269,9 +269,9 @@ def m_acces(action, id):
         FROM users u
         LEFT JOIN private_acces wa
         ON u.id = wa.u_id AND wa.web_id = %s
-        WHERE wa.u_id IS NULL
+        WHERE wa.u_id IS NULL AND u.id <> %s
         ORDER BY u.name ASC
-        """, (id,))
+        """, (id,session['user_id']))
         users = cursor.fetchall()
     elif action == "remove_acces":
         cursor.execute("""
