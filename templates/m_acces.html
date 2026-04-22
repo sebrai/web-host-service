@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>manage site: {{site['title']}}</title>
+</head>
+
+<body>
+    <h1>{{action.replace("_"," ")}} to theese users:</h1>
+    <form action="{{url_for(action,id = site['id'])}}" method="POST">
+        {% for user in users %}
+        <input type="checkbox" name="choice" value="{{user['id']}}">
+        {{user['name']}} {{user['email']}} <br>
+        {% endfor %}
+        <input type="submit" value="submit">
+    </form>
+</body>
+
+</html>

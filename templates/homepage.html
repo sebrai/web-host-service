@@ -126,8 +126,8 @@
                     {% endif %}
                 </button></a>
                 {%if page['private'] %}
-                <a href=""><button>give acces</button></a>
-                <a href=""><button>remove acces</button></a>
+                <a href="{{url_for('m_acces',action = 'add_acces',id = page['id'])}}"><button>give acces</button></a>
+                <a href="{{url_for('m_acces',action = 'remove_acces',id = page['id'])}}"><button>remove acces</button></a>
                 {% endif %}
                 <a href="{{url_for('editweb',id = page['id'])}}">
                     <button>edit</button>

@@ -243,6 +243,79 @@ def editweb(id):
         return redirect(url_for("home"))
     return render_template("editweb.html",id =id)  
 
+@app.route("/manage_acces/<action>/<id>")
+def m_acces(action, id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    if action not in ["add_acces","remove_acces"]:
+        return redirect('home')
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, title, private FROM websites WHERE id = %s",(id,))
+    site = cursor.fetchone()
+    if not site:
+        return redirect(url_for('home'))
+    if site['private']:
+        acces = check_acces(web_id=id)
+        # print(acces)
+        if  not acces[0] or not "edit" in acces[2]:
+            cursor.close()
+            conn.close()
+            abort(403)
+    users = []
+    if  action == "add_acces":
+        cursor.execute("""
+        SELECT u.id, u.name, u.email
+        FROM users u
+        LEFT JOIN private_acces wa
+        ON u.id = wa.u_id AND wa.web_id = %s
+        WHERE wa.u_id IS NULL
+        ORDER BY u.name ASC
+        """, (id,))
+        users = cursor.fetchall()
+    elif action == "remove_acces":
+        cursor.execute("""
+        SELECT u.id, u.name, u.email
+        FROM users u
+        INNER JOIN private_acces wa
+            ON u.id = wa.u_id
+        WHERE wa.web_id = %s AND u.id <> %s
+        ORDER BY u.name ASC
+        """, (id,session['user_id']))
+        users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('m_acces.html',action = action, site =site, users = users)
+
+@app.route("/add_acces/<id>",methods = ["POST","GET"])
+def add_acces(id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    if request.method == "POST":
+       users = request.form.getlist("choice") 
+       conn = get_db_connection()
+       cursor = conn.cursor(dictionary=True)
+       for user_id in users:
+           cursor.execute("INSERT INTO private_acces(web_id,u_id) VALUES(%s,%s)",(id,user_id))
+       conn.commit()
+       cursor.close()
+       conn.close()
+    return redirect(url_for('home'))
+    
+@app.route("/remove_acces/<id>",methods = ["POST","GET"])
+def remove_acces(id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    if request.method == "POST":
+       users = request.form.getlist("choice") 
+       conn = get_db_connection()
+       cursor = conn.cursor(dictionary=True)
+       for user_id in users:
+           cursor.execute("DELETE FROM private_acces WHERE web_id = %s and u_id = %s",(id,user_id))
+       conn.commit()
+       cursor.close()
+       conn.close()
+    return redirect(url_for('home'))
 
 @app.route("/view/<title>")
 def getwebsite(title):
