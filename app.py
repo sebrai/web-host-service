@@ -250,28 +250,37 @@ def getwebsite(title):
 @app.route("/forum/<id>")
 def forum(id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT c.content, c.timestamp, u.name FROM comments c WHERE w_id = %s JOIN users u ON c.u_id = u.id",(id,))
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT c.comment, c.timestamp, u.name FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s",(id,))
     result = cursor.fetchall()
-    cursor.execute("SELECT id, title FROM websites WHERE id = %s",(id,))
+    cursor.execute("SELECT id, title, private FROM websites WHERE id = %s",(id,))
     site = cursor.fetchone()
+    # print(result,site)
+    if site['private']:
+        acces = check_acces(web_id=id)
+        # print(acces)
+        if  not acces[0] or not "view" in acces[2]:
+            cursor.close()
+            conn.close()
+            abort(403)
     cursor.close()
     conn.close()
     return render_template('forum.html',comments = result, site = site)
-@app.route("comment/<id>", method= ['POST','GET'])
+@app.route("/comment/<id>", methods = ['POST','GET'])
 def comment(id):
     if not session.get('user_id'):
       return redirect(url_for('login'))
     if request.method == 'POST':
         content = request.form['content']
-
         conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO coments(comment, u_id, web_id) VALUES(%s,%s,%s)",(content,session['user_id'],id))
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("INSERT INTO comments(comment, u_id, web_id) VALUES(%s,%s,%s)",(content,session['user_id'],id))
         conn.commit()
         cursor.close()
         conn.close()
-    redirect(url_for('forum',id = id))
+        return redirect(url_for('forum', id=id))
+    return redirect(url_for('forum',id = id))
+
 @app.errorhandler(404)
 def e404(e):
     path = request.path

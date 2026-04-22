@@ -132,6 +132,7 @@
                 <a href="{{url_for('editweb',id = page['id'])}}">
                     <button>edit</button>
                 </a>
+                <a href="{{url_for('forum',id = page['id'])}}"><button>visit forum</button></a>
             </div>
             {% endfor %}
             <a href="{{url_for('newwebsite')}}">
