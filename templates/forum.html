@@ -12,10 +12,12 @@
         --white: #e9edfc;
         --blue: #1a146f;
     }
+
     body {
         background-color: var(--white);
     }
-    .comment{
+
+    .comment {
         width: 50vw;
         height: 100px;
         background-color: var(--white);
@@ -27,30 +29,39 @@
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         margin-bottom: 20px;
     }
-    .comment img{
+
+    .comment img {
         position: absolute;
         right: 5px;
         top: 5px;
         border-radius: 100%;
-        border:var(--blue) solid 2px;
+        border: var(--blue) solid 2px;
+        max-width: 60px;
 
-    }  
+    }
 </style>
+
 <body>
     <h1>the {{site.title}} forum </h1>
     <a href="{{url_for('visit',web_id = site['id'])}}">
         <h3>visit website</h3>
     </a>
     {% if session.get('user_id')%}
-    <a href="{{url_for('home')}}"><h3>back to homepage</h3></a>
+    <a href="{{url_for('home')}}">
+        <h3>back to homepage</h3>
+    </a>
     {% endif %}
 
     {% for comment in comments %}
-    <div class="comment" >
+    <div class="comment">
         <p>
             {{comment['comment']}}
         </p>
-        <img src="https://ui-avatars.com/api/?&color=000&name={{comment['name']}}" alt="{{comment['name']}}">
+        <img class="pfp" src="{% if comment.get('pfp') %}
+            data:{{ comment.get('pfp_type', 'image/jpeg') }};base64,{{ comment.get('pfp') }}
+          {% else %}
+            https://ui-avatars.com/api/?&color=000&name={{ comment['name'] }}
+          {% endif %}" alt="{{ comment['name'] }}">
     </div>
     {% endfor %}
     {% if not comments %}
@@ -63,7 +74,7 @@
     </form>
     {% else %}
     <a href="{{url_for('login')}}">log inn to add a comment</a>
-    
+
     {% endif %}
 </body>
 

@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 import os
 import re
+import base64
 from dotenv import load_dotenv
 # Bruker du Mariadb så bytter du ut mysql med mariadb. Mariadb må installeres med (pip install mariadb) Koden finner du på neste linje.
 # import mariadb
@@ -64,7 +65,7 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id,name,email,password,role FROM users WHERE name=%s", (brukernavn,))
+        cursor.execute("SELECT id,name,email,password,role,pfp,pfp_type FROM users WHERE name=%s", (brukernavn,))
         bruker = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -110,7 +111,58 @@ def logout():
 # ------------------------------------------------------------------ user info/ hamepage
 @app.route("/user/<id>")
 def user_page(id):
-    return id+ " the user"
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT name,id,email,role,pfp,pfp_type FROM users WHERE id = %s",(id,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return render_template('user.html' , user = user)
+
+@app.route("/user_details/<id>",methods= ["GET","POST"])
+def user_details(id):
+    if not session.get('user_id'):
+      return redirect(url_for('login'))
+    if session['user_id'] != id and session['role'] != "admin":
+        return redirect(url_for('home'))
+    if request.method == "POST":
+        name = request.form['name']
+        email = request.form['email']
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("UPDATE users SET name = %s, email = %s WHERE id = %s",(name,email,id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    return redirect(url_for('user_page',id = id))
+
+@app.route("/set_pfp/<id>", methods=['GET', 'POST'])
+def set_pfp(id):
+    if not session.get('user_id'):
+        return redirect(url_for('login'))
+
+    if session['user_id'] != id and session.get('role') != "admin":
+        return redirect(url_for('home'))
+
+    if request.method == "POST":
+        pfp = request.files.get('pfp')
+        if not pfp or pfp.filename == "":
+            return "No file uploaded", 400
+        # Convert to base64
+        pfp_data = base64.b64encode(pfp.read()).decode('utf-8')
+        pfp_type = pfp.mimetype
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET pfp = %s,pfp_type = %s WHERE id = %s",
+            (pfp_data,pfp_type, id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+    return redirect(url_for('user_page', id=id))
+
 
 @app.route("/homepage")
 def home():
@@ -120,10 +172,12 @@ def home():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT id, title, private FROM  websites WHERE u_id = %s",(session.get("user_id"),))
     websites = cursor.fetchall()
+    cursor.execute("SELECT pfp, pfp_type FROM users WHERE id = %s", (session['user_id'],))
+    current_user = cursor.fetchone()
     # print(websites,session.get('user_id'))
     cursor.close()
     conn.close()
-    return render_template("homepage.html",webpages = websites)
+    return render_template("homepage.html",webpages = websites, current_user = current_user)
 
 # -------------------------------------------------------------------- websites
 
@@ -324,7 +378,7 @@ def getwebsite(title):
 def forum(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT c.comment, c.timestamp, u.name FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s",(id,))
+    cursor.execute("SELECT c.comment, c.timestamp, u.name, u.pfp, u.pfp_type FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s",(id,))
     result = cursor.fetchall()
     cursor.execute("SELECT id, title, private FROM websites WHERE id = %s",(id,))
     site = cursor.fetchone()

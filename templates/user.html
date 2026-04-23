@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>user: {{user['name']}}</title>
+</head>
+<style>
+    :root {
+        --white: #e9edfc;
+        --blue: #1a146f;
+    }
+
+    .pfp {
+        border-radius: 100%;
+        aspect-ratio: 1/1;
+        height: 80%;
+        border: black solid 2px;
+    }
+
+    body {
+        background-color: var(--white);
+    }
+
+    header {
+        background-color: var(--blue);
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row-reverse;
+
+        padding: 0 20px;
+        box-sizing: border-box;
+        /* IMPORTANT */
+        overflow: hidden;
+    }
+
+    .nameplate {
+        color: var(--white);
+    }
+
+
+    footer {
+        background-color: var(--blue);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 10%;
+        display: flex;
+        flex-flow: row-reverse nowrap;
+        justify-content: end;
+        gap: 20px;
+        align-items: center;
+    }
+
+    main {
+        background-color: var(--blue);
+        position: fixed;
+        top: 20%;
+        left: 10%;
+        width: 80%;
+        height: 60%;
+        color: var(--white);
+    }
+</style>
+
+<body>
+    <header>
+        <img class="pfp" src="{% if user.get('pfp') %}
+            data:{{ user.get('pfp_type', 'image/jpeg') }};base64,{{ user.get('pfp') }}
+          {% else %}
+            https://ui-avatars.com/api/?&color=000&name={{ user['name'] }}
+          {% endif %}" alt="{{ user['name'] }}">
+
+        <h1 class="nameplate">{{user['name']}} </h1>
+
+    </header>
+    <main>
+        {% if user['user_id'] == session.get('id') or session.get('role') == 'admin' %}
+        <div class="user_edit">
+            <form action="{{url_for('user_details',id = user['id'])}}" method="post">
+                <input type="text" value="{{user['name']}}" name="name" required>
+                <input type="text" value="{{user['email']}}" name="email" required>
+                <input type="submit" value="submit">
+            </form> <br> <br>
+            <form action="{{url_for('set_pfp',id = user['id'])}}" method="post" enctype="multipart/form-data">
+                <input type="file" name="pfp" id="pfp" accept="image/*" required>
+                <input type="submit" value="submit pfp">
+            </form>
+        </div>
+        {% endif %}
+    </main>
+
+</body>
+
+</html>
