@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>user: {{user['name']}}</title>
+    <link rel="shortcut icon" href=" {{url_for('static',filename= 'img/favicon.svg')}}" type="image/x-icon">
+
 </head>
 <style>
     :root {
@@ -84,7 +86,7 @@
 
     </header>
     <main>
-        {% if user['user_id'] == session.get('id') or session.get('role') == 'admin' %}
+        {% if user['id'] == session.get('user_id') or session.get('role') == 'admin' %}
         <div class="user_edit">
             <form action="{{url_for('user_details',id = user['id'])}}" method="post">
                 <input type="text" value="{{user['name']}}" name="name" required>
@@ -98,7 +100,11 @@
         </div>
         {% endif %}
     </main>
-
+    <footer>
+        <div></div>
+        <a href=" {{url_for('logout')}}"> <button>logout</button></a>
+         <a href="{{url_for('home')}}"><button>back to home</button></a>
+    </footer>
 </body>
 
 </html>

@@ -19,7 +19,7 @@
 
     .comment {
         width: 50vw;
-        height: 100px;
+        min-height: 150px;
         background-color: var(--white);
         color: var(--blue);
         border: var(--blue) solid 2px;
@@ -36,8 +36,28 @@
         top: 5px;
         border-radius: 100%;
         border: var(--blue) solid 2px;
-        max-width: 60px;
+        
+        aspect-ratio: 1/1;
+        height: 60px;
 
+    }
+    .comment  .info{
+        position: absolute;
+        top: 70px;
+        right: 5px;
+        font-size:larger;
+    }
+    .comment p{
+        position: absolute;
+        top:5px;
+        left: 5px;
+        max-width: 80%;
+        color: var(--blue);
+        font-size: x-large;
+        overflow-wrap: break-word;
+    }
+    form{
+        margin-bottom: 20px;
     }
 </style>
 
@@ -50,8 +70,14 @@
     <a href="{{url_for('home')}}">
         <h3>back to homepage</h3>
     </a>
-    {% endif %}
+    <form action="{{url_for('comment',id = site['id'])}}" method="post">
+        <input type="text" name="content" required>
+        <input type="submit" value="submit comment">
+    </form>
+    {% else %}
+    <a href="{{url_for('login')}}">log inn to add a comment</a>
 
+    {% endif %}
     {% for comment in comments %}
     <div class="comment">
         <p>
@@ -62,20 +88,16 @@
           {% else %}
             https://ui-avatars.com/api/?&color=000&name={{ comment['name'] }}
           {% endif %}" alt="{{ comment['name'] }}">
+          <div class="info">
+            {{comment['timestamp']}} <br>
+            <a href="{{url_for('user_page',id = comment['u_id'])}}">{{comment['name']}}</a>
+          </div>
     </div>
     {% endfor %}
     {% if not comments %}
     there are no comments under this site
     {% endif %}
-    {% if session.get('user_id')%}
-    <form action="{{url_for('comment',id = site['id'])}}" method="post">
-        <input type="text" name="content" required>
-        <input type="submit" value="submit comment">
-    </form>
-    {% else %}
-    <a href="{{url_for('login')}}">log inn to add a comment</a>
-
-    {% endif %}
+    
 </body>
 
 </html>
