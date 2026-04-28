@@ -238,7 +238,7 @@ def bann_user(id):
     conn.commit()
     cursor.close()
     conn.close()
-    return redirect(url_for('user_page'))
+    return redirect(url_for('user_page',id =id))
 
 @app.route("/homepage")
 def home():
