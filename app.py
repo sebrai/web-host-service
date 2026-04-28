@@ -216,6 +216,29 @@ def set_pfp(id):
         conn.close()
     return redirect(url_for('user_page', id=id))
 
+@app.route("/bann/<id>", methods=["POST"])
+def bann_user(id):
+    if not session.get('user_id'):
+       return redirect(url_for('login'))
+    if session['role'] != "admin":
+        abort(403)
+    if int(id) == session['user_id']:
+        return "You cannot ban yourself", 400
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT role FROM users WHERE id = %s", (id,))
+    target = cursor.fetchone()
+    if target and target[0] == "admin":
+        cursor.close()
+        conn.close()
+        return "Cannot ban another admin", 403
+    
+    cursor.execute("UPDATE users SET banned = 1 WHERE id =%s",(id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('user_page'))
 
 @app.route("/homepage")
 def home():
