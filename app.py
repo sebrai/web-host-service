@@ -79,9 +79,7 @@ def is_banned(u_id):
 
 @app.before_request
 def block_banned_users():
-    # allow these routes no matter what
     allowed_routes = {"login", "register", "static"}
-
     if request.endpoint in allowed_routes:
         return
 
