@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import mysql.connector
 import os
 import re
@@ -25,6 +27,19 @@ def get_db_connection():
         password=pword,
         database="web_hoster"
     )
+
+
+def get_user_id_or_ip():
+    return str(session.get("user_id") or get_remote_address()) # gets the actual person that is active
+
+
+
+limiter = Limiter( # setter an rate limiter sån att onde folk ikke kan spamme serveren med requests
+    get_user_id_or_ip,
+    app=app,
+    default_limits=["100 per hour"]
+)
+
 def check_acces(web_id,):
     if not session.get('user_id'):
       return (False,"not loged inn",("none",))
@@ -49,13 +64,40 @@ def check_acces(web_id,):
     conn.close()
     # print(has_acces)
     return (bool(has_acces),"no exeptions hit",("view",))
-    
- 
+
+
+def is_banned(u_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT banned FROM users WHERE id = %s", (u_id,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if not row:
+        return False  
+    return bool(row["banned"])
+
+@app.before_request
+def block_banned_users():
+    # allow these routes no matter what
+    allowed_routes = {"login", "register", "static"}
+
+    if request.endpoint in allowed_routes:
+        return
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return  # guests are allowed
+
+    if is_banned(user_id):
+        return redirect(url_for('logout'))
+
 #----------------------------------------------------- login
 @app.route("/")
 def blank():
     return redirect(url_for('login'))
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     if  session.get('user_id'):
       return redirect(url_for('home'))
@@ -69,8 +111,10 @@ def login():
         bruker = cursor.fetchone()
         cursor.close()
         conn.close()
+        if not bruker:
+            return render_template("login.html", feil_melding="wrong username or password")
         if bruker['banned']:
-            return render_template("login.html", feil_melding="attempted user is banned")
+             return render_template("login.html", feil_melding="attempted user is banned")
         if bruker and check_password_hash(bruker['password'], passord):
             session['username'] = bruker['name']
             session['user_id'] = bruker['id']
@@ -85,6 +129,7 @@ def login():
 
 
 @app.route("/new_user", methods=["GET", "POST"])
+@limiter.limit("2 per minute")
 def register():
     if request.method == "POST":
         brukernavn = request.form['brukernavn']
@@ -128,6 +173,7 @@ def user_page(id):
     return render_template('user.html' , user = user,public = pubsites, private = privsites)
 
 @app.route("/user_details/<id>",methods= ["GET","POST"])
+@limiter.limit("5 per minute")
 def user_details(id):
     if not session.get('user_id'):
       return redirect(url_for('login'))
@@ -145,6 +191,7 @@ def user_details(id):
     return redirect(url_for('user_page',id = id))
 
 @app.route("/set_pfp/<id>", methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def set_pfp(id):
     if not session.get('user_id'):
         return redirect(url_for('login'))
@@ -216,6 +263,7 @@ def visit(web_id):
     return css+ html_content + js
 
 @app.route('/new_webpage', methods =['POST','GET'])
+@limiter.limit("2 per minute")
 def newwebsite():
   if not session.get('user_id'):
       return redirect(url_for('login'))
@@ -249,6 +297,7 @@ def newwebsite():
   return render_template("newweb.html")
 
 @app.route("/change_status/<id>/<old>")
+@limiter.limit("20 per minute")
 def changestatus(id,old):
     if not session.get('user_id'):
       return redirect(url_for('login'))
@@ -264,6 +313,7 @@ def changestatus(id,old):
     conn.close()
     return redirect(url_for('home'))
 @app.route("/edit_website/<id>", methods =['POST','GET'])
+@limiter.limit("4 per minute")
 def editweb(id):
     if not session.get('user_id'):
       return redirect(url_for('login'))
@@ -401,7 +451,8 @@ def forum(id):
     cursor.close()
     conn.close()
     return render_template('forum.html',comments = result, site = site)
-@app.route("/comment/<id>", methods = ['POST','GET'])
+@app.route("/comment/<id>", methods=["POST"])
+@limiter.limit("10 per minute")
 def comment(id):
     if not session.get('user_id'):
       return redirect(url_for('login'))
@@ -424,5 +475,10 @@ def e404(e):
 @app.errorhandler(403)
 def e403(e):
     return redirect(url_for("home"))
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return "to many requests", 429
+
 if __name__ == "__main__":
     app.run(debug=True,host='0.0.0.0', port=5000)
