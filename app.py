@@ -65,11 +65,12 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id,name,email,password,role,pfp,pfp_type FROM users WHERE name=%s", (brukernavn,))
+        cursor.execute("SELECT id,name,email,password,role, banned FROM users WHERE name=%s", (brukernavn,))
         bruker = cursor.fetchone()
         cursor.close()
         conn.close()
-
+        if bruker['banned']:
+            return render_template("login.html", feil_melding="attempted user is banned")
         if bruker and check_password_hash(bruker['password'], passord):
             session['username'] = bruker['name']
             session['user_id'] = bruker['id']
@@ -78,7 +79,7 @@ def login():
 
             return redirect(url_for("home"))
         else:
-            return render_template("login.html", feil_melding="Ugyldig brukernavn eller passord")
+            return render_template("login.html", feil_melding="wrong username or password")
 
     return render_template("login.html")
 
@@ -113,11 +114,18 @@ def logout():
 def user_page(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT name,id,email,role,pfp,pfp_type FROM users WHERE id = %s",(id,))
+    cursor.execute("SELECT name,id,email,role,pfp,pfp_type, banned FROM users WHERE id = %s",(id,))
     user = cursor.fetchone()
+    cursor.execute("SELECT id , title FROM websites WHERE u_id = %s AND private = 0",(id,))
+    pubsites = cursor.fetchall()
+    privsites = None
+    if session.get('username') == user['name']:
+        cursor.execute("SELECT id , title FROM websites WHERE u_id = %s AND private = 1",(id,))
+        privsites = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('user.html' , user = user)
+    # print(privsites)
+    return render_template('user.html' , user = user,public = pubsites, private = privsites)
 
 @app.route("/user_details/<id>",methods= ["GET","POST"])
 def user_details(id):
@@ -172,7 +180,7 @@ def home():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT id, title, private FROM  websites WHERE u_id = %s",(session.get("user_id"),))
     websites = cursor.fetchall()
-    cursor.execute("SELECT pfp, pfp_type FROM users WHERE id = %s", (session['user_id'],))
+    cursor.execute("SELECT pfp, pfp_type FROM users WHERE id = %s", (session['user_id'],)) # KAN IKKE LIGGE I SESSION PGA STØRELSE
     current_user = cursor.fetchone()
     # print(websites,session.get('user_id'))
     cursor.close()
