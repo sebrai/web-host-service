@@ -241,10 +241,26 @@ def bann_user(id):
     conn.close()
     return redirect(url_for('user_page',id =id))
 
+
+@app.route("/unbann/<id>")
+@limiter.limit("5 per minute")
+def unbann(id):
+    if not session.get('user_id'):
+       return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET banned = 0 WHERE id =%s",(id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('user_page',id =id))
+
 @app.route("/homepage")
 def home():
     if not session.get('user_id'):
       return redirect(url_for('login'))
+    if session['role'] != "admin":
+        abort(403)
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT id, title, private FROM  websites WHERE u_id = %s",(session.get("user_id"),))
