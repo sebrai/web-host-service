@@ -474,7 +474,7 @@ def getwebsite(title):
 def forum(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT c.comment, c.timestamp, u.name, u.pfp, u.pfp_type,u.id AS u_id FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s ORDER BY c.timestamp ASC",(id,))
+    cursor.execute("SELECT c.comment, c.timestamp, u.name, u.pfp, u.pfp_type,u.id AS u_id FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s AND u.banned = 0 ORDER BY c.timestamp ASC",(id,))
     result = cursor.fetchall()
     cursor.execute("SELECT id, title, private FROM websites WHERE id = %s",(id,))
     site = cursor.fetchone()
