@@ -95,7 +95,8 @@
     .sites div a {
         color: var(--white);
     }
-    .user_edit{
+
+    .user_edit {
         margin: 10px;
     }
 </style>
@@ -136,15 +137,24 @@
         {% endif %}
         {% if user['id'] == session.get('user_id') or session.get('role') == 'admin' %}
         <div class="user_edit">
-            <form action="{{url_for('user_details',id = user['id'])}}" method="post" onsubmit="return confirm('Are you sure you want to submit this form?');">
+            <form action="{{url_for('user_details',id = user['id'])}}" method="post"
+                onsubmit="return confirm('Are you sure you want to submit this form?');">
                 <input type="text" value="{{user['name']}}" name="name" required>
                 <input type="text" value="{{user['email']}}" name="email" required>
                 <input type="submit" value="submit">
             </form> <br> <br>
-            <form action="{{url_for('set_pfp',id = user['id'])}}" method="post" enctype="multipart/form-data" onsubmit="return confirm('Are you sure you want to submit this form?');">
+            <form action="{{url_for('set_pfp',id = user['id'])}}" method="post" enctype="multipart/form-data"
+                onsubmit="return confirm('Are you sure you want to submit this form?');">
                 <input type="file" name="pfp" id="pfp" accept="image/*" required>
                 <input type="submit" value="submit pfp">
             </form>
+            {% if session.get('role') == 'admin' and not user['banned'] and user['role'] != 'admin' %}
+            <a href="{{url_for('bann_user',id = user['id'])}}" onclick="return confirm('Are you sure you want to bann user ?')">
+                <button style="color: red;">bann user</button>
+            </a>
+            {%elif session.get('role') == 'admin' and user['banned'] and user['role'] != 'admin' %}
+            unbann button
+            {% endif %}
         </div>
         {% endif %}
     </main>

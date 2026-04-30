@@ -88,13 +88,14 @@ def block_banned_users():
         return  # guests are allowed
 
     if is_banned(user_id):
-        return redirect(url_for('logout'))
+        session.clear()
+        return render_template('login.html', feilmelding = "this user has been banned")
 
 #----------------------------------------------------- login
 @app.route("/")
 def blank():
     return redirect(url_for('login'))
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["POST","GET"])
 @limiter.limit("5 per minute")
 def login():
     if  session.get('user_id'):
@@ -216,13 +217,13 @@ def set_pfp(id):
         conn.close()
     return redirect(url_for('user_page', id=id))
 
-@app.route("/bann/<id>", methods=["POST"])
+@app.route("/bann/<id>", methods=["POST","GET"])
 def bann_user(id):
     if not session.get('user_id'):
        return redirect(url_for('login'))
     if session['role'] != "admin":
         abort(403)
-    if int(id) == session['user_id']:
+    if id == session['user_id']:
         return "You cannot ban yourself", 400
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -452,7 +453,7 @@ def remove_acces(id):
 
 @app.route("/view/<title>")
 def getwebsite(title):
-    pass
+    return get_remote_address()
 @app.route("/forum/<id>")
 def forum(id):
     conn = get_db_connection()
