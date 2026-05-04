@@ -11,13 +11,18 @@
 
  ### features
 
- - *upload html text/files and have them displayed on the site*
+ - *upload html files and have them displayed on the site*
  - *support for css and js*
  - *login and register to set upp site*
  - *anyone can view uploaded sites*
- - *comment on and rate sites opladed if you have a user*
+ - *unless the site is private*
+ - *comment on sites opladed if you have a user*
 
 ## tech used
+
+- *databse: mariadb (mysql)* 
+- *backend: flask (python)*
+- *templates: jinja2*
 
 ## resources
 
