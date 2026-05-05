@@ -99,9 +99,11 @@
             https://ui-avatars.com/api/?&color=000&name={{ comment['u_name'] }}
           {% endif %}" alt="{{ comment['u_name'] }}">
         <div class="info">
-            {{comment['timestamp']}} <br>
+            <span title="date sent">
+                {{comment['timestamp']}}
+            </span><br>
             <a href="{{url_for('user_page',id = comment['u_id'])}}">{{comment['u_name']}} {% if comment['u_role'] ==
-                'admin' %} ☆ {% endif %} </a>
+                'admin' %} <span title="admin">☆</span> {% endif %} </a>
         </div>
     </div>
     {% endfor %}
