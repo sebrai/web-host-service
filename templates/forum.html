@@ -30,37 +30,43 @@
         font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         margin-bottom: 20px;
     }
-    .comment#you{
-        background-color: var(--dblue) ;
+
+    .comment#you {
+        background-color: var(--dblue);
         margin-left: 20px;
     }
+
     .comment img {
         position: absolute;
         right: 5px;
         top: 5px;
         border-radius: 100%;
         border: var(--blue) solid 2px;
-        
+
         aspect-ratio: 1/1;
         height: 60px;
+        object-fit: cover;
 
     }
-    .comment  .info{
+
+    .comment .info {
         position: absolute;
         top: 70px;
         right: 5px;
-        font-size:larger;
+        font-size: larger;
     }
-    .comment p{
+
+    .comment p {
         position: absolute;
-        top:5px;
+        top: 5px;
         left: 5px;
         max-width: 80%;
         color: var(--blue);
         font-size: x-large;
         overflow-wrap: break-word;
     }
-    form{
+
+    form {
         margin-bottom: 20px;
     }
 </style>
@@ -83,27 +89,29 @@
 
     {% endif %}
     {% for comment in comments %}
-    <div class="comment" id="{{'you' if comment.get('name') == session.get('username') else 'other'}}">
+    <div class="comment" id="{{'you' if comment.get('u_name') == session.get('username') else 'other'}}">
         <p>
             {{comment['comment']}}
         </p>
         <img class="pfp" src="{% if comment.get('pfp') %}
             data:{{ comment.get('pfp_type', 'image/jpeg') }};base64,{{ comment.get('pfp') }}
           {% else %}
-            https://ui-avatars.com/api/?&color=000&name={{ comment['name'] }}
-          {% endif %}" alt="{{ comment['name'] }}">
-          <div class="info">
+            https://ui-avatars.com/api/?&color=000&name={{ comment['u_name'] }}
+          {% endif %}" alt="{{ comment['u_name'] }}">
+        <div class="info">
             {{comment['timestamp']}} <br>
-            <a href="{{url_for('user_page',id = comment['u_id'])}}">{{comment['name']}}</a>
-          </div>
+            <a href="{{url_for('user_page',id = comment['u_id'])}}">{{comment['u_name']}} {% if comment['u_role'] ==
+                'admin' %} ☆ {% endif %} </a>
+        </div>
     </div>
     {% endfor %}
     {% if not comments %}
     there are no comments under this site
     {% endif %}
-    
+
 </body>
 <script>
-    
+
 </script>
+
 </html>

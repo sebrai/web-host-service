@@ -22,7 +22,7 @@ app.secret_key = os.getenv("skey")
 # Husk å endre host, user, password og database, slik at de er tilpasset dine instillinger 
 def get_db_connection():
     return mysql.connector.connect(
-        host="10.200.14.13",
+        host="127.0.0.1",
         user=user,
         password=pword,
         database="web_hoster"
@@ -470,11 +470,12 @@ def remove_acces(id):
 @app.route("/view/<title>")
 def getwebsite(title):
     return get_remote_address()
+
 @app.route("/forum/<id>")
 def forum(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT c.comment, c.timestamp, u.name, u.pfp, u.pfp_type,u.id AS u_id FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s AND u.banned = 0 ORDER BY c.timestamp ASC",(id,))
+    cursor.execute("SELECT c.comment, c.timestamp, u.name AS u_name, u.pfp, u.pfp_type,u.id AS u_id, u.role AS u_role FROM comments c JOIN users u ON c.u_id = u.id WHERE c.web_id = %s AND u.banned = 0 ORDER BY c.timestamp ASC",(id,))
     result = cursor.fetchall()
     cursor.execute("SELECT id, title, private FROM websites WHERE id = %s",(id,))
     site = cursor.fetchone()
