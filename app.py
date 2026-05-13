@@ -96,7 +96,7 @@ def block_banned_users():
 def blank():
     return redirect(url_for('login'))
 @app.route("/login", methods=["POST","GET"])
-@limiter.limit("5 per minute")
+@limiter.limit("15 per minute")
 def login():
     if  session.get('user_id'):
       return redirect(url_for('home'))
@@ -291,14 +291,60 @@ def visit(web_id):
         print(acces)
         if  not acces[0] or not "view" in acces[2]:
             abort(403)
+    warning_script = ""
+
+    if result["user_banned"]:
+        warning_script = """
+        <script>
+            const allowed = confirm(
+                "Warning: This site was uploaded by a banned user. Continue?"
+            );
+
+            if (!allowed) {
+                window.location.href = "/homepage";
+            } else {
+                document.body.style.display = "block";
+            }
+        </script>
+
+        <style>
+        body {
+            display: none;
+        }
+        </style>
+        """
     js = ("<script>"+result['js']+"</script>") if result.get("js") else ""
     css = ("<style>"+result['css']+"</style>") if result.get("css") else ""
-    html_content,count = re.subn("(<title>)(.*?)(</title>)",rf"\1{result['title']}\3",result['html'], flags=re.IGNORECASE) 
+
+    html_content,count = re.subn(
+        "(<title>)(.*?)(</title>)",
+        rf"\1{result['title']}\3",
+        result['html'],
+        flags=re.IGNORECASE
+    )
+
     if count == 0:
-        new_html = re.sub(r"(<head[^>]*>)", rf"\1\n<title>{result['title']}</title>", new_html, flags=re.IGNORECASE)
-    html_content = re.sub(r'<script.*?>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
-    html_content = re.sub(r'<link[^>]*rel=["\']stylesheet["\'][^>]*>', '', html_content, flags=re.IGNORECASE)
-    return css+ html_content + js
+        new_html = re.sub(
+            r"(<head[^>]*>)",
+            rf"\1\n<title>{result['title']}</title>",
+            new_html,
+            flags=re.IGNORECASE
+        )
+
+    html_content = re.sub(
+        r'<script[^>]*src=["\'](?!https?://)[^"\']+["\'][^>]*>\s*</script>',
+        '',
+        html_content,
+        flags=re.IGNORECASE
+    )
+
+    html_content = re.sub(
+        r'<link[^>]*rel=["\']stylesheet["\'][^>]*>',
+        '',
+        html_content,
+        flags=re.IGNORECASE
+    )
+    return css+ html_content + js + warning_script
 
 @app.route('/new_webpage', methods =['POST','GET'])
 @limiter.limit("2 per minute")
